@@ -15,7 +15,6 @@ import (
 
 	pb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"github.com/buchgr/bazel-remote/cache"
-	"github.com/buchgr/bazel-remote/cache/disk"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 )
@@ -29,7 +28,7 @@ type HTTPCache interface {
 }
 
 type httpCache struct {
-	cache        *disk.Cache
+	cache        Cache
 	accessLogger cache.Logger
 	errorLogger  cache.Logger
 	validateAC   bool
@@ -48,7 +47,7 @@ type statusPageData struct {
 // accessLogger will print one line for each HTTP request to stdout.
 // errorLogger will print unexpected server errors. Inexistent files and malformed URLs will not
 // be reported.
-func NewHTTPCache(cache *disk.Cache, accessLogger cache.Logger, errorLogger cache.Logger, validateAC bool, commit string) HTTPCache {
+func NewHTTPCache(cache Cache, accessLogger cache.Logger, errorLogger cache.Logger, validateAC bool, commit string) HTTPCache {
 
 	_, numItems := cache.Stats()
 

@@ -6,18 +6,13 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof" // Register pprof handlers with DefaultServeMux.
-	"net/url"
 	"os"
 	"runtime"
 	"strconv"
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/buchgr/bazel-remote/cache"
-	"github.com/buchgr/bazel-remote/cache/disk"
-	"github.com/buchgr/bazel-remote/cache/gcsproxy"
-	"github.com/buchgr/bazel-remote/cache/s3proxy"
-
-	"github.com/buchgr/bazel-remote/cache/httpproxy"
+	"github.com/buchgr/bazel-remote/cache/nodisk"
 
 	"github.com/buchgr/bazel-remote/config"
 	"github.com/buchgr/bazel-remote/server"
@@ -297,28 +292,29 @@ func main() {
 		accessLogger := log.New(os.Stdout, "", logFlags)
 		errorLogger := log.New(os.Stderr, "", logFlags)
 
-		var proxyCache cache.Proxy
-		if c.GoogleCloudStorage != nil {
-			proxyCache, err = gcsproxy.New(c.GoogleCloudStorage.Bucket,
-				c.GoogleCloudStorage.UseDefaultCredentials, c.GoogleCloudStorage.JSONCredentialsFile,
-				accessLogger, errorLogger)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else if c.HTTPBackend != nil {
-			httpClient := &http.Client{}
-			var baseURL *url.URL
-			baseURL, err = url.Parse(c.HTTPBackend.BaseURL)
-			if err != nil {
-				log.Fatal(err)
-			}
-			proxyCache = httpproxy.New(baseURL,
-				httpClient, accessLogger, errorLogger)
-		} else if c.S3CloudStorage != nil {
-			proxyCache = s3proxy.New(c.S3CloudStorage, accessLogger, errorLogger)
-		}
+		diskCache := nodisk.New(c.S3CloudStorage, accessLogger, errorLogger)
+		// var proxyCache cache.Proxy
+		// if c.GoogleCloudStorage != nil {
+		// 	proxyCache, err = gcsproxy.New(c.GoogleCloudStorage.Bucket,
+		// 		c.GoogleCloudStorage.UseDefaultCredentials, c.GoogleCloudStorage.JSONCredentialsFile,
+		// 		accessLogger, errorLogger)
+		// 	if err != nil {
+		// 		log.Fatal(err)
+		// 	}
+		// } else if c.HTTPBackend != nil {
+		// 	httpClient := &http.Client{}
+		// 	var baseURL *url.URL
+		// 	baseURL, err = url.Parse(c.HTTPBackend.BaseURL)
+		// 	if err != nil {
+		// 		log.Fatal(err)
+		// 	}
+		// 	proxyCache = httpproxy.New(baseURL,
+		// 		httpClient, accessLogger, errorLogger)
+		// } else if c.S3CloudStorage != nil {
+		// 	proxyCache = s3proxy.New(c.S3CloudStorage, accessLogger, errorLogger)
+		// }
 
-		diskCache := disk.New(c.Dir, int64(c.MaxSize)*1024*1024*1024, proxyCache)
+		// diskCache := disk.New(c.Dir, int64(c.MaxSize)*1024*1024*1024, proxyCache)
 
 		mux := http.NewServeMux()
 		httpServer := &http.Server{

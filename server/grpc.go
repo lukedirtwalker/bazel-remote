@@ -17,7 +17,6 @@ import (
 	"github.com/bazelbuild/remote-apis/build/bazel/semver"
 
 	"github.com/buchgr/bazel-remote/cache"
-	"github.com/buchgr/bazel-remote/cache/disk"
 
 	_ "github.com/mostynb/go-grpc-compression/snappy" // Register snappy
 	_ "github.com/mostynb/go-grpc-compression/zstd"   // and zstd support.
@@ -34,7 +33,7 @@ var (
 )
 
 type grpcServer struct {
-	cache        *disk.Cache
+	cache        Cache
 	accessLogger cache.Logger
 	errorLogger  cache.Logger
 	depsCheck    bool
@@ -46,7 +45,7 @@ type grpcServer struct {
 func ListenAndServeGRPC(addr string, opts []grpc.ServerOption,
 	validateACDeps bool,
 	enableRemoteAssetAPI bool,
-	c *disk.Cache, a cache.Logger, e cache.Logger) error {
+	c Cache, a cache.Logger, e cache.Logger) error {
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -59,7 +58,7 @@ func ListenAndServeGRPC(addr string, opts []grpc.ServerOption,
 func serveGRPC(l net.Listener, opts []grpc.ServerOption,
 	validateACDepsCheck bool,
 	enableRemoteAssetAPI bool,
-	c *disk.Cache, a cache.Logger, e cache.Logger) error {
+	c Cache, a cache.Logger, e cache.Logger) error {
 
 	srv := grpc.NewServer(opts...)
 	s := &grpcServer{
